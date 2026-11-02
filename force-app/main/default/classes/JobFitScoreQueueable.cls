@@ -26,11 +26,16 @@ public with sharing class JobFitScoreQueueable implements Queueable, Database.Al
                     AI_Summary__c = r.summary,
                     Fit_Score__c = r.score
                 ));
+            } catch (JobFitScorer.CapReachedException e) {
+                // over the daily limit, leave a note instead of calling Gemini
+                toUpdate.add(new Job_Application__c(Id = app.Id, AI_Summary__c = e.getMessage()));
             } catch (Exception e) {
                 // don't kill the whole batch for one bad response
                 System.debug(LoggingLevel.ERROR, 'Fit score failed for ' + app.Id + ': ' + e.getMessage());
             }
         }
+        // DML only after all callouts are done
+        JobFitScorer.saveUsage();
         if (!toUpdate.isEmpty()) {
             update toUpdate;
         }
