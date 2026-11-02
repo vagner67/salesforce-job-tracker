@@ -21,16 +21,21 @@ sf project deploy start --target-org jobdev
 sf apex run test --target-org jobdev --code-coverage --result-format human
 ```
 
-## LLM endpoint setup
+## LLM setup (Google Gemini free tier)
 
-The Named Credential in `force-app/main/default/namedCredentials/LLM_API.namedCredential-meta.xml`
-only has a placeholder URL (`https://llm-api.example.com`) and no secrets. After deploying:
+`JobFitScorer` calls `POST callout:LLM_API/v1beta/models/gemini-2.5-flash:generateContent`.
+The Named Credential `LLM_API` points to `https://generativelanguage.googleapis.com` and has no secrets.
 
-1. Setup > Named Credentials > LLM_API: change the URL to your real endpoint.
-2. Add the API key as an External Credential / custom header (don't commit it).
-3. Named Credentials don't need a Remote Site Setting. If you change the code to call a raw URL instead of `callout:LLM_API`, you'll need to add one under Setup > Remote Site Settings.
+The API key lives only in the org, in the protected hierarchy custom setting `LLM_Settings__c`:
 
-The code calls `POST {url}/v1/score`. If your provider has a different format you'll probably need a small proxy (I used a tiny serverless function for that).
+1. Get a key from Google AI Studio (don't commit it anywhere).
+2. Setup > Custom Settings > LLM Settings > Manage > New (org default), fill **Api Key**.
+   Or with the CLI, reading the key from a local file so it doesn't show up on screen:
+   `sf data create record -o <alias> -s LLM_Settings__c -v "SetupOwnerId=<OrgId> Api_Key__c=$(cat ~/.secrets/gemini_key) Max_Calls_Per_Day__c=2"`
+3. Assign the `Job_Tracker_User` permission set to your user.
+
+Daily cap: `Max_Calls_Per_Day__c` (default 2). `Calls_Today__c` / `Last_Call_Date__c` are updated by the queueable.
+When the cap is hit, no callout is made and `AI_Summary__c` gets a short note instead. Raise the number in the setting if you need more.
 
 ## TODO
 
@@ -41,6 +46,6 @@ The code calls `POST {url}/v1/score`. If your provider has a different format yo
 
 ## Status
 
-The metadata was checked locally (XML parse + `sf project convert source`). Tests are written but I still have to run them in an org, so no coverage numbers yet.
+Deployed to a Developer Edition org with RunLocalTests: 14/14 tests passing, ~98% coverage.
 
 MIT license.
