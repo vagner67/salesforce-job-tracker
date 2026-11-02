@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>Hierarchy</customSettingsType>
+    <description>Gemini settings: API key (set in the org only, never commit it) and a daily call cap.</description>
+    <enableFeeds>false</enableFeeds>
+    <label>LLM Settings</label>
+    <visibility>Protected</visibility>
+</CustomObject>
